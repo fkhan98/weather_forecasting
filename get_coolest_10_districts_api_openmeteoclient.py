@@ -57,14 +57,14 @@ def generate_top_ten_coldest_district():
  
         districts_average_temp[name] = temp_sum/7
 
-    with open("./top_10_coldest_district_for_today.json", 'w') as file:
+    with open("./avg_temp_all_district_for_today.json", 'w') as file:
         json.dump(districts_average_temp, file)
 
 schedule.every().day.at("00:00").do(generate_top_ten_coldest_district) ## generate top 10 coldest district json at 12:00 AM everyday
 
 @app.get("/top-10-coldest-districts")
 def evaluate():
-    with open('./top_10_coldest_district_for_today.json', 'r') as file:
+    with open('./avg_temp_all_district_for_today.json', 'r') as file:
         data = json.load(file)
     
     sorted_districts_average_temp_dict = dict(sorted(data.items(), key=lambda item: item[1]))
