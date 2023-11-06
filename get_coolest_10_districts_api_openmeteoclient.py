@@ -1,8 +1,24 @@
 import json
 import time
+import uvicorn
 import pandas as pd
 import openmeteo_requests
+from itertools import islice
+from pydantic import BaseModel
+from http.client import REQUEST_TIMEOUT
 from openmeteo_sdk.Variable import Variable
+from fastapi import FastAPI, File, Form, Request
+from fastapi.middleware.cors import CORSMiddleware
+
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 url = "https://api.open-meteo.com/v1/forecast"
 om = openmeteo_requests.Client()
@@ -11,11 +27,10 @@ om = openmeteo_requests.Client()
 with open('./lat_long_info.json', 'r') as file:
     dictrict_lat_long_data = json.load(file)
 
-
-if __name__ == "__main__":
+def generate_top_ten_coldest_district():
     t1 = time.time()
     info = dictrict_lat_long_data['districts']
-    average_temp_all_districts = []
+    districts_average_temp = {}
     
     for district in info:
         temp_sum = 0
@@ -38,5 +53,22 @@ if __name__ == "__main__":
         temp_sum += hourly_temperature_2m[14]
         for i in range(38,len(hourly_temperature_2m), 24):
             temp_sum += hourly_temperature_2m[i]
-        average_temp_all_districts.append(temp_sum/7)
+ 
+        districts_average_temp[name] = temp_sum/7
+
+    with open("./top_10_coldest_district_for_today.json", 'w') as file:
+        json.dump(districts_average_temp, file)
+
+@app.get("/top-10-coldest-districts")
+def evaluate():
+    with open('./top_10_coldest_district_for_today.json', 'r') as file:
+        data = json.load(file)
     
+    sorted_districts_average_temp_dict = dict(sorted(data.items(), key=lambda item: item[1]))
+    ten_coldest_districts = dict(islice(sorted_districts_average_temp_dict.items(), 10))
+
+    return ten_coldest_districts
+
+if __name__ == "__main__":
+    generate_top_ten_coldest_district()
+    uvicorn.run("get_coolest_10_districts_api_openmeteoclient:app", host='0.0.0.0', port=5010, reload=False)
