@@ -28,7 +28,7 @@ om = openmeteo_requests.Client()
 with open('./lat_long_info.json', 'r') as file:
     dictrict_lat_long_data = json.load(file)
 
-def generate_top_ten_coldest_district():
+def generate_avg_temp_for_all_district():
     t1 = time.time()
     info = dictrict_lat_long_data['districts']
     districts_average_temp = {}
@@ -60,7 +60,7 @@ def generate_top_ten_coldest_district():
     with open("./avg_temp_all_district_for_today.json", 'w') as file:
         json.dump(districts_average_temp, file)
 
-schedule.every().day.at("00:00").do(generate_top_ten_coldest_district) ## generate top 10 coldest district json at 12:00 AM everyday
+schedule.every().day.at("00:00").do(generate_avg_temp_for_all_district) ## generate average temperature for all district at 12:00 AM everyday
 
 @app.get("/top-10-coldest-districts")
 def evaluate():
@@ -73,5 +73,5 @@ def evaluate():
     return ten_coldest_districts
 
 if __name__ == "__main__":
-    # generate_top_ten_coldest_district()
+    # generate_avg_temp_for_all_district()
     uvicorn.run("get_coolest_10_districts_api_openmeteoclient:app", host='0.0.0.0', port=5010, reload=False)
